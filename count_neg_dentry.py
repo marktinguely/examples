@@ -5,7 +5,8 @@ from typing import Optional, Union
 
 from drgn import Path, NULL, Program, IntegerLike
 from drgn.helpers.common.format import escape_ascii_string
-from drgn.helpers.linux.fs import for_each_mount, mount_src, mount_dst, mount_fstype
+from drgn.helpers.linux.fs import for_each_mount
+from drgn.helpers.linux.fs import mount_src, mount_dst, mount_fstype
 from list_lru import list_lru_for_each_entry
 
 def count_new_dentry(
@@ -33,7 +34,7 @@ def count_new_dentry(
         d_negcnt = 0
         for dentry in list_lru_for_each_entry(
             prog, "struct dentry", lru.address_of_(), "d_lru"
-                    ):
+        ):
             d_cnt = d_cnt + 1
             if (dentry.d_inode == NULL(prog, 'struct inode *')) :
                 d_negcnt = d_negcnt + 1
