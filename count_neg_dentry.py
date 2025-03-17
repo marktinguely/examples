@@ -7,9 +7,10 @@ from drgn import Path, NULL, Program, IntegerLike
 from drgn.helpers.common.format import escape_ascii_string
 from drgn.helpers.linux.fs import for_each_mount
 from drgn.helpers.linux.fs import mount_src, mount_dst, mount_fstype
-from list_lru import list_lru_for_each_entry
 
-def count_new_dentry(
+from drgn_tools.list_lru import list_lru_for_each_entry
+
+def count_neg_dentry(
     prog: Program,
     *,
     dst: Optional[Path] = None,
