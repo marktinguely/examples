@@ -8,6 +8,7 @@ from drgn.helpers.common.format import escape_ascii_string
 from drgn.helpers.linux.fs import for_each_mount
 from drgn.helpers.linux.fs import mount_src, mount_dst, mount_fstype
 
+from drgn_tools.dentry import dentry_path_any_mount
 from drgn_tools.list_lru import list_lru_for_each_entry
 
 def count_neg_dentry(
@@ -39,4 +40,7 @@ def count_neg_dentry(
             d_cnt = d_cnt + 1
             if (dentry.d_inode == NULL(prog, 'struct inode *')) :
                 d_negcnt = d_negcnt + 1
+                if verbose is not None:
+                    dname = dentry_path_any_mount(dentry)
+                    print(f"mntpt {mnt_dst} dentry {hex(dentry)} name {dname}")
         print(f"mntpt {mnt_dst} dentry {d_cnt} neg dentries {d_negcnt}")
