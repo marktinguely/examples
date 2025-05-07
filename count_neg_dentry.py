@@ -35,7 +35,7 @@ def count_neg_dentry(
         d_cnt = 0
         d_negcnt = 0
         for dentry in list_lru_for_each_entry(
-            prog, "struct dentry", lru.address_of_(), "d_lru"
+            "struct dentry", lru.address_of_(), "d_lru"
         ):
             d_cnt = d_cnt + 1
             if (dentry.d_inode == NULL(prog, 'struct inode *')) :

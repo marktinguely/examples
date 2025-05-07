@@ -496,7 +496,7 @@ def xfs_print_bufs(prog: Program, mp: Object) -> None :
     btarg = mp.m_ddev_targp
     lru = btarg.bt_lru
     for bp in list_lru_for_each_entry(
-        prog, "struct xfs_buf", lru.address_of_(), "b_lru"
+        "struct xfs_buf", lru.address_of_(), "b_lru"
     ):
         # check to make sure this buffer is really for this device
         if bp.b_target == btarg :
