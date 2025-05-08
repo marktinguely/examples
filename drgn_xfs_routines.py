@@ -789,7 +789,7 @@ def xfs_print_iclog(prog: Program, xlog: Object) -> None :
     """
     icstate = ["XLOG_STATE_ACTIVE", "XLOG_STATE_WANT_SYNC",
          "XLOG_STATE_SYNCING", "XLOG_STATE_DONE_SYNC",
-         "XLOG_STATE_DO_CALLBACK", XLOG_STATE_DO_CALLBACK",
+         "XLOG_STATE_DO_CALLBACK", "XLOG_STATE_DO_CALLBACK",
          "XLOG_STATE_DIRTY"]
     iclog1 = xlog.l_iclog
     iclog = iclog1
