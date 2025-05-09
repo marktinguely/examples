@@ -34,7 +34,7 @@ def count_neg_dentry(
         lru = sb.s_dentry_lru
         d_cnt = 0
         d_negcnt = 0
-        for dentry in list_lru_for_each_entry(
+        for _, _, dentry in list_lru_for_each_entry(
             "struct dentry", lru.address_of_(), "d_lru"
         ):
             d_cnt = d_cnt + 1
