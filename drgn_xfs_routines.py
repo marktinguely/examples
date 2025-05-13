@@ -113,7 +113,12 @@ def xfs_iext_find_first_leaf(prog: Program, ifp: Object) -> Object :
     :param ifp: ``struct xfs_ifork *``
     :returns: ``struct xfs_iext_leaf *`` Object
     """
-    node = cast("struct xfs_iext_node *", ifp.if_u1.if_root)
+    # uek7 and before have if_u1 union
+    if has_member(ifp, "if_u1") :
+        iroot = ifp.if_u1.if_root
+    else :
+        iroot = ifp.if_data
+    node = cast("struct xfs_iext_node *", iroot)
     if ifp.if_height == 0:
       return Object(prog, "struct xfs_iext_leaf *", 0)
     # loop through the lowest non-leaf nodes
@@ -142,7 +147,12 @@ def xfs_iext_find_last_leaf(prog: Program, ifp: Object) -> Object :
     :param ifp: ``struct xfs_ifork *``
     :returns: ``struct xfs_iext_leaf`` Object
     """
-    node = cast("struct xfs_iext_node *", ifp.if_u1.if_root)
+    # uek7 and before have if_u1 union
+    if has_member(ifp, "if_u1") :
+        iroot = ifp.if_u1.if_root
+    else :
+        iroot = ifp.if_data
+    node = cast("struct xfs_iext_node *", iroot)
     if ifp.if_height == 0:
       return Object(prog, "struct xfs_iext_leaf *", 0)
     # loop through the entries to find the last non-zero entry in non-leaf
@@ -269,7 +279,12 @@ def xfs_iext_find_level(prog: Program, ifp: Object, offset: int) -> Object :
     :param offset: start offset of extent
     :returns: ``struct xfs_iext_leaf`` Object
     """
-    node = cast("struct xfs_iext_node *", ifp.if_u1.if_root)
+    # uek7 and before have if_u1 union
+    if has_member(ifp, "if_u1") :
+        iroot = ifp.if_u1.if_root
+    else :
+        iroot = ifp.if_data
+    node = cast("struct xfs_iext_node *", iroot)
     if ifp.if_height == 0:
       return Object(prog, "struct xfs_iext_node *", 0)
     for height in range(ifp.if_height-1) :
@@ -398,7 +413,12 @@ def xfs_print_perag(prog: Program, perag: Object, verbose=None) -> None :
     :param prog: Kernel being debugged
     :param perag ``struct xfs_perag *``
     """
-    print(f"xfs_perag: 0x{perag.value_():x} agno: {perag.pag_agno.value_()} flcnt: {perag.pagf_flcount.value_()} freeblks: {perag.pagf_freeblks.value_()}")
+    # uek7 and before
+    if has_member(perag, "pag_agno") :
+        agno = perag.pag_agno
+    else :
+        agno = perag.pag_group.xg_gno
+    print(f"xfs_perag: 0x{perag.value_():x} agno: {agno.value_()} flcnt: {perag.pagf_flcount.value_()} freeblks: {perag.pagf_freeblks.value_()}")
     # print the inodes know to the AG
     if verbose == 2 :
         for _, ino in radix_tree_for_each(perag.pag_ici_root.address_of_()) :
@@ -406,12 +426,21 @@ def xfs_print_perag(prog: Program, perag: Object, verbose=None) -> None :
             print(f"xfsino 0x{ip.value_():x} inum 0x{ip.i_ino.value_():x} iflgs 0x{ip.i_flags.value_():x}")
     # print the busy extents for this AG
     if verbose is not None :
-        for bext in rbtree_inorder_for_each_entry(
-            "struct xfs_extent_busy",
-            perag.pagb_tree.address_of_(),
-            "rb_node",
-        ) :
-            print(f"agno: {bext.agno.value_()} agbno: {bext.bno.value_()} len: {bext.length.value_()} flgs: {bext.flags.value_()}")
+        # uek7 and before
+        if has_member(perag, "pagb_tree") :
+            for bext in rbtree_inorder_for_each_entry(
+                "struct xfs_extent_busy",
+                perag.pagb_tree.address_of_(),
+                "rb_node",
+            ):
+                # uek7 and before
+                if has_member(bext, "agno") :
+                    bagno = bext.agno
+                else :
+                    bagno = bext.group.xg_gno
+                print(f"agno: {bagno.value_()} agbno: {bext.bno.value_()} len: {bext.length.value_()} flgs: {bext.flags.value_()}")
+        else :
+            print(f"fix the new code")
 
 # walk a transaction"s busy_extent list
 def xfs_trans_busy_extents(prog: Program, trans: Object) -> None :
@@ -423,7 +452,12 @@ def xfs_trans_busy_extents(prog: Program, trans: Object) -> None :
     """
     for bext in list_for_each_entry("struct xfs_extent_busy",
       trans.t_busy.address_of_(), "list") :
-        print(f"agno: {bext.agno.value_()} agbno: {bext.bno.value_()} len: {bext.length.value_()} flgs: {bext.flags.value_()}")
+        # uek7 and before
+        if has_member(bext, "agno") :
+            bagno = bext.agno
+        else :
+            bagno = bext.group.xg_gno
+        print(f"agno: {bagno.value_()} agbno: {bext.bno.value_()} len: {bext.length.value_()} flgs: {bext.flags.value_()}")
 
 #
 def xfs_print_all_perags(prog: Program, dst: Optional[Path]=None, verbose=None) -> None :
@@ -440,7 +474,16 @@ def xfs_print_all_perags(prog: Program, dst: Optional[Path]=None, verbose=None) 
         mp = cast("struct xfs_mount *", mnt.mnt.mnt_sb.s_fs_info)
         print(
           f"{mnt_src} {mnt_dst} ({mp.type_.type_name()})0x{mp.value_():x}")
-        for _, entry in radix_tree_for_each(mp.m_perag_tree.address_of_()) :
+        # uek7 and before have m_perag_tree
+        if has_member(mp, "m_perag_tree") :
+            xa = mp.m_perag_tree
+        else :
+            # uek8 has m_perags
+            if has_member(mp, "m_perags") :
+                xa = mp.m_perags
+            else :
+                xa = mp.m_groups[0].xa
+        for _, entry in radix_tree_for_each(xa.address_of_()) :
             m_perag = cast("struct xfs_perag *", entry)
             if not m_perag.value_() :
                 continue
@@ -471,11 +514,16 @@ def xfs_print_verbose_buf(prog: Program, bp: Object) -> None :
     :param prog: Kernel being debugged
     :param bp: ``struct xfs_buf *``:
     """
+    # uek8 and before
+    if has_member(bp.b_pag, "pag_agno") :
+        agno = bp.b_pag.pag_agno
+    else :
+        agno = bp.b_pag.pag_group.xg_gno
     # uek7 and before
     if has_member(bp, "bp.b_bn") :
-        print(f"bp 0x{bp.value_():x} bno 0x{bp.b_bn.value_():x} flgs 0x{bp.b_flags.value_():x} ag {bp.b_pag.pag_agno.value_()}")
+        print(f"bp 0x{bp.value_():x} bno 0x{bp.b_bn.value_():x} flgs 0x{bp.b_flags.value_():x} ag {agno.value_()}")
     else :
-        print(f"bp 0x{bp.value_():x} bno 0x{bp.b_maps[0].bm_bn.value_():x} flgs 0x{bp.b_flags.value_():x} ag {bp.b_pag.pag_agno.value_()}")
+        print(f"bp 0x{bp.value_():x} bno 0x{bp.b_maps[0].bm_bn.value_():x} flgs 0x{bp.b_flags.value_():x} ag {agno.value_()}")
     # look for magic xfs_bug b_addr data
     if bp.b_addr != NULL(prog, "void *") :
         p = cast("char  *", bp.b_addr)
@@ -688,7 +736,12 @@ def xfs_print_cil_ctx(prog: Program, ctx: Object, verbose=None) -> None :
         print("Busy extents:")
         for bext in list_for_each_entry("struct xfs_extent_busy",
           ctx.busy_extents.address_of_(), "list") :
-            print(f"agno: {bext.agno.value_()} agbno: {bext.bno.value_()} len: {bext.length.value_()} flgs: {bext.flags.value_()}")
+            # uek7 and before
+            if has_member(bext, "agno") :
+                bagno = bext.agno
+            else :
+                bagno = bext.group.xg_gno
+            print(f"agno: {bagno.value_()} agbno: {bext.bno.value_()} len: {bext.length.value_()} flgs: {bext.flags.value_()}")
     # List the CTX lv_chain
     # uek8 convert the ctx.lv_chain to a list
     if has_member(ctx.lv_chain, "next") :
@@ -736,7 +789,12 @@ def xfs_print_cil(prog: Program, xfs_cil: Object, verbose=None) -> None :
                  print(f'busy extents on cpu {cpu}')
             for bext in list_for_each_entry("struct xfs_extent_busy",
                 pcp.busy_extents.address_of_(), "list") :
-                print(f"agno: {bext.agno.value_()} agbno: {bext.bno.value_()} len: {bext.length.value_()} flgs: {bext.flags.value_()}")
+                # uek7 and before
+                if has_member(bext, "agno") :
+                    bagno = bext.agno
+                else :
+                    bagno = bext.group.xg_gno
+                print(f"agno: {bagno.value_()} agbno: {bext.bno.value_()} len: {bext.length.value_()} flgs: {bext.flags.value_()}")
     xfs_ctx = xfs_cil.xc_ctx
     xfs_print_cil_ctx(prog, xfs_ctx)
     print("CIL commiting chains")
