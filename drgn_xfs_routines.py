@@ -426,21 +426,22 @@ def xfs_print_perag(prog: Program, perag: Object, verbose=None) -> None :
             print(f"xfsino 0x{ip.value_():x} inum 0x{ip.i_ino.value_():x} iflgs 0x{ip.i_flags.value_():x}")
     # print the busy extents for this AG
     if verbose is not None :
-        # uek7 and before
+        # uek8 and before has the pagb_tree. Later has entry in xfs_groups
         if has_member(perag, "pagb_tree") :
-            for bext in rbtree_inorder_for_each_entry(
-                "struct xfs_extent_busy",
-                perag.pagb_tree.address_of_(),
-                "rb_node",
-            ):
-                # uek7 and before
-                if has_member(bext, "agno") :
-                    bagno = bext.agno
-                else :
-                    bagno = bext.group.xg_gno
-                print(f"agno: {bagno.value_()} agbno: {bext.bno.value_()} len: {bext.length.value_()} flgs: {bext.flags.value_()}")
+            pagbtree = perag.pagb_tree
         else :
-            print(f"fix the new code")
+            pagbtree = perag.pag_group.xg_busy_extents.eb_tree
+        for bext in rbtree_inorder_for_each_entry(
+            "struct xfs_extent_busy",
+            pagbtree.address_of_(),
+            "rb_node",
+        ):
+            # uek7 and before
+            if has_member(bext, "agno") :
+                bagno = bext.agno
+            else :
+                bagno = bext.group.xg_gno
+            print(f"agno: {bagno.value_()} agbno: {bext.bno.value_()} len: {bext.length.value_()} flgs: {bext.flags.value_()}")
 
 # walk a transaction"s busy_extent list
 def xfs_trans_busy_extents(prog: Program, trans: Object) -> None :
