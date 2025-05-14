@@ -1,12 +1,26 @@
 # Copyright (c) 2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
+"""
+Count the number of dentry and negative dentry entries on a filesystem.
+Filesystems can be specified by name (dst='<MOUNT POINT>'), by
+filesystem type (fstype='<FS TYPE>').
+The dentry pointer and filename can optionally displayed when the
+verbose arguement is supplied.
+"""
 import os
-from typing import Optional, Union
+from typing import Optional
+from typing import Union
 
-from drgn import Path, NULL, Program, IntegerLike
+from drgn import IntegerLike
+from drgn import NULL
+from drgn import Path
+from drgn import Program
+
 from drgn.helpers.common.format import escape_ascii_string
 from drgn.helpers.linux.fs import for_each_mount
-from drgn.helpers.linux.fs import mount_src, mount_dst, mount_fstype
+from drgn.helpers.linux.fs import mount_fstype
+from drgn.helpers.linux.fs import mount_dst
+from drgn.helpers.linux.fs import mount_src
 
 from drgn_tools.dentry import dentry_path_any_mount
 from drgn_tools.list_lru import list_lru_for_each_entry

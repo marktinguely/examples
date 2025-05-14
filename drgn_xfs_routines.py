@@ -1,45 +1,60 @@
 # Copyright (c) 2024,2025, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
-#
-#  The XFS drgn routine catagories:
-#    inode fork extent walking.
-#     this could be extended to compare COW and data forks
-#    busy extents in per AG and in a transaction
-#     the CIL code also displays the busy extents in the delay log
-#    simple XFS mount points
-#     displays the xfs_mount for each XFS
-#       for_each_mount() args are different for Linux 3.10 vrs 4.14
-#       so, I used the most common version.
-#    XFS log delay log (CIL) and AIL
-#     These are huge dump and would be advance user calls
-#     Print the iclog state and tail lsn (converted from big endian)
-#     The CIL also dumps all the CTX (push contexts) that are outstanding
-#      and also the busy extents in the CTX
-#    Misc -- ignore the buffer code, not working with Linux 4.14 because
-#      bt_lru uses a different kind of list (list_lru)
-#     print all the active xfs_inodes and xfs_buf that are active
-#      (huge dump). The idea is if I am looking for a kind of inode or
-#      buffer. I still have not decided what to print for information
-#      or if these are just templates.
-#
+"""
+  The XFS drgn routine catagories:
+    inode fork extent walking.
+     this could be extended to compare COW and data forks
+   busy extents in per AG and in a transaction
+     the CIL code also displays the busy extents in the delay log
+    simple XFS mount points
+     displays the xfs_mount for each XFS
+       for_each_mount() args are different for Linux 3.10 vrs 4.14
+       so, I used the most common version.
+    XFS log delay log (CIL) and AIL
+     These are huge dump and would be advance user calls
+     Print the iclog state and tail lsn (converted from big endian)
+     The CIL also dumps all the CTX (push contexts) that are outstanding
+      and also the busy extents in the CTX
+    Misc -- ignore the buffer code, not working with Linux 4.14 because
+      bt_lru uses a different kind of list (list_lru)
+     print all the active xfs_inodes and xfs_buf that are active
+      (huge dump). The idea is if I am looking for a kind of inode or
+      buffer. I still have not decided what to print for information
+      or if these are just templates.
+"""
 
 import os
 from ctypes import c_uint64
-from stat import S_ISREG, S_ISDIR, S_ISLNK
+
+from stat import S_ISDIR
+from stat import S_ISLNK
+from stat import S_ISREG
+
 from typing import Optional
 
-from drgn import cast, Path, container_of, NULL, Object, Program
+from drgn import cast
+from drgn import container_of
+from drgn import NULL
+from drgn import Object
+from drgn import Path
+from drgn import Program
+
 from drgn.helpers.common.format import escape_ascii_string
 from drgn.helpers.linux.cpumask import for_each_online_cpu
-from drgn.helpers.linux.fs import for_each_mount, mount_src, mount_dst
-from drgn.helpers.linux.list import list_empty, list_for_each_entry
-from drgn.helpers.linux.mm import decode_page_flags, page_to_virt, page_to_phys
+from drgn.helpers.linux.fs import for_each_mount
+from drgn.helpers.linux.fs import mount_dst
+from drgn.helpers.linux.fs import mount_src
+from drgn.helpers.linux.list import list_empty
+from drgn.helpers.linux.list import list_for_each_entry
+from drgn.helpers.linux.mm import decode_page_flags
+from drgn.helpers.linux.mm import page_to_phys
+from drgn.helpers.linux.mm import page_to_virt
 from drgn.helpers.linux.percpu import per_cpu_ptr
 from drgn.helpers.linux.radixtree import radix_tree_for_each
 from drgn.helpers.linux.rbtree import rbtree_inorder_for_each_entry
 
-from drgn_tools.util import has_member
 from drgn_tools.list_lru import list_lru_for_each_entry
+from drgn_tools.util import has_member
 
 __all__ = (
     "xfs_init_iext_cur",
