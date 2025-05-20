@@ -93,9 +93,15 @@ def count_neg_dentry(
                     print(f"mntpt {mnt_dst} dentry {hex(dentry)} name {dname}")
         print(f"mntpt {mnt_dst} dentry {dcnt} neg dentries {dnegcnt}")
         if verbose == 2:
-            print(f"    dentrys by nid/memcg {d_cnt}")
-            print(f"    dentrys by nid {d_nid}")
-            print(f"    dentrys by memcg {d_mcg}")
-            print(f"    neg dentries by nid/memcg {d_negcnt}")
-            print(f"    neg dentrys by nid {d_negnid}")
-            print(f"    neg dentrys by memcg {d_negmcg}")
+            if len(d_cnt) != 0:
+                print(f"    dentrys by nid/memcg {d_cnt}")
+            if len(d_nid) != 0:
+                print(f"    dentrys by nid {d_nid}")
+            if len(d_mcg) != 0:
+                print(f"    dentrys by memcg {d_mcg}")
+            if len(d_negcnt) != 0:
+                print(f"    neg dentries by nid/memcg {d_negcnt}")
+            if len(d_negnid) != 0:
+                print(f"    neg dentrys by nid {d_negnid}")
+            if len(d_negmcg) != 0:
+                print(f"    neg dentrys by memcg {d_negmcg}")
