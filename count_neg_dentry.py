@@ -34,7 +34,10 @@ def count_neg_dentry(
 ) -> None:
     """
     Walks the mounted filesystems (optional by mount point or fstype) and
-    counts the dentry and negative deentry in the filesytem,
+    counts the dentry and negative deentry in the filesytem.
+    verbose == 1 returns all negative dentries.
+    verbose == 2 returns the dentry and negative dentrry counts per
+    NUMA nodeid/memcg.
     Uses proposed drgn-tool list_lru module.
     """
     for mnt in for_each_mount(
@@ -46,15 +49,29 @@ def count_neg_dentry(
         mnt_dst = escape_ascii_string(mount_dst(mnt), escape_backslash=True)
         sb = mnt.mnt.mnt_sb
         lru = sb.s_dentry_lru
-        d_cnt = 0
-        d_negcnt = 0
-        for _, _, dentry in list_lru_for_each_entry(
+        dcnt = 0
+        dnegcnt = 0
+        d_cnt = {}
+        d_negcnt = {}
+        for nid, memcg, dentry in list_lru_for_each_entry(
             "struct dentry", lru.address_of_(), "d_lru"
         ):
-            d_cnt = d_cnt + 1
+            tpl = (nid, memcg)
+            dcnt = dcnt + 1
+            if tpl not in d_cnt:
+                d_cnt[tpl] = 1
+            else:
+                d_cnt[tpl] = d_cnt[tpl] + 1
             if (dentry.d_inode == NULL(prog, 'struct inode *')) :
-                d_negcnt = d_negcnt + 1
-                if verbose is not None:
+                dnegcnt = dnegcnt + 1
+                if tpl not in d_negcnt:
+                    d_negcnt[tpl] = 1
+                else:
+                    d_negcnt[tpl] = d_negcnt[tpl] + 1
+                if verbose == 1:
                     dname = dentry_path_any_mount(dentry)
                     print(f"mntpt {mnt_dst} dentry {hex(dentry)} name {dname}")
-        print(f"mntpt {mnt_dst} dentry {d_cnt} neg dentries {d_negcnt}")
+        print(f"mntpt {mnt_dst} dentry {dcnt} neg dentries {dnegcnt}")
+        if verbose == 2:
+            print(f"    dentrys by nid/memcg {d_cnt}")
+            print(f"    neg dentries by nid/memcg {d_negcnt}")
