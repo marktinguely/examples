@@ -50,9 +50,13 @@ def count_neg_dentry(
         sb = mnt.mnt.mnt_sb
         lru = sb.s_dentry_lru
         dcnt = 0
-        dnegcnt = 0
         d_cnt = {}
+        d_nid = {}
+        d_mcg = {}
+        dnegcnt = 0
         d_negcnt = {}
+        d_negnid = {}
+        d_negmcg = {}
         for nid, memcg, dentry in list_lru_for_each_entry(
             "struct dentry", lru.address_of_(), "d_lru"
         ):
@@ -62,16 +66,36 @@ def count_neg_dentry(
                 d_cnt[tpl] = 1
             else:
                 d_cnt[tpl] = d_cnt[tpl] + 1
+            if nid not in d_nid:
+                d_nid[nid] = 1
+            else:
+                d_nid[nid] = d_nid[nid] + 1
+            if memcg not in d_mcg:
+                d_mcg[memcg] = 1
+            else:
+                d_mcg[memcg] = d_mcg[memcg] + 1
             if (dentry.d_inode == NULL(prog, 'struct inode *')) :
                 dnegcnt = dnegcnt + 1
                 if tpl not in d_negcnt:
                     d_negcnt[tpl] = 1
                 else:
                     d_negcnt[tpl] = d_negcnt[tpl] + 1
+                if nid not in d_negnid:
+                    d_negnid[nid] = 1
+                else:
+                    d_negnid[nid] = d_negnid[nid] + 1
+                if memcg not in d_negmcg:
+                    d_negmcg[memcg] = 1
+                else:
+                    d_negmcg[memcg] = d_negmcg[memcg] + 1
                 if verbose == 1:
                     dname = dentry_path_any_mount(dentry)
                     print(f"mntpt {mnt_dst} dentry {hex(dentry)} name {dname}")
         print(f"mntpt {mnt_dst} dentry {dcnt} neg dentries {dnegcnt}")
         if verbose == 2:
             print(f"    dentrys by nid/memcg {d_cnt}")
+            print(f"    dentrys by nid {d_nid}")
+            print(f"    dentrys by memcg {d_mcg}")
             print(f"    neg dentries by nid/memcg {d_negcnt}")
+            print(f"    neg dentrys by nid {d_negnid}")
+            print(f"    neg dentrys by memcg {d_negmcg}")
