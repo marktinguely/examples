@@ -35,7 +35,7 @@ def count_neg_dentry(
     """
     Walks the mounted filesystems (optional by mount point or fstype) and
     counts the dentry and negative deentry in the filesytem.
-    verbose == 1 returns all negative dentries.
+    verbose == 1 returns all negative dentry paths.
     verbose == 2 returns the dentry and negative dentrry counts per
     NUMA nodeid/memcg.
     Uses proposed drgn-tool list_lru module.
@@ -90,18 +90,18 @@ def count_neg_dentry(
                     d_negmcg[memcg] = d_negmcg[memcg] + 1
                 if verbose == 1:
                     dname = dentry_path_any_mount(dentry)
-                    print(f"mntpt {mnt_dst} dentry {hex(dentry)} name {dname}")
-        print(f"mntpt {mnt_dst} dentry {dcnt} neg dentries {dnegcnt}")
+                    print(f"mntpt {mnt_dst} dentry {hex(dentry)} name {dname.decode()}")
+        print(f"mntpt {mnt_dst} dentry {dcnt} neg dentry {dnegcnt}")
         if verbose == 2:
             if len(d_cnt) != 0:
-                print(f"    dentrys by nid/memcg {d_cnt}")
+                print(f"    dentry by nid/memcg {d_cnt}")
             if len(d_nid) != 0:
-                print(f"    dentrys by nid {d_nid}")
+                print(f"    dentry by nid {d_nid}")
             if len(d_mcg) != 0:
-                print(f"    dentrys by memcg {d_mcg}")
+                print(f"    dentry by memcg {d_mcg}")
             if len(d_negcnt) != 0:
-                print(f"    neg dentries by nid/memcg {d_negcnt}")
+                print(f"    neg dentry by nid/memcg {d_negcnt}")
             if len(d_negnid) != 0:
-                print(f"    neg dentrys by nid {d_negnid}")
+                print(f"    neg dentry by nid {d_negnid}")
             if len(d_negmcg) != 0:
-                print(f"    neg dentrys by memcg {d_negmcg}")
+                print(f"    neg dentry by memcg {d_negmcg}")
