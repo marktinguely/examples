@@ -91,7 +91,7 @@ def count_neg_dentry(
                 if verbose == 1:
                     dname = dentry_path_any_mount(dentry)
                     print(f"mntpt {mnt_dst} dentry {hex(dentry)} name {dname.decode()}")
-        print(f"mntpt {mnt_dst} dentry {dcnt} neg dentry {dnegcnt}")
+        print(f"\nmntpt {mnt_dst} dentry {dcnt} neg dentry {dnegcnt}")
         if verbose == 2:
             if len(d_cnt) != 0:
                 print(f"    dentry by nid/memcg {d_cnt}")
