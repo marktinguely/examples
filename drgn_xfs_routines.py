@@ -558,6 +558,7 @@ def xfs_print_bufs(prog: Program, mp: Object) -> None :
     :param mp: ``struct xfs_mount *``:
     """
     btarg = mp.m_ddev_targp
+    print(f'buftarg 0x{btarg.value_():x}')
     lru = btarg.bt_lru
     for _, _, bp in list_lru_for_each_entry(
         "struct xfs_buf", lru.address_of_(), "b_lru"
@@ -565,6 +566,17 @@ def xfs_print_bufs(prog: Program, mp: Object) -> None :
         # check to make sure this buffer is really for this device
         if bp.b_target == btarg :
             xfs_print_verbose_buf(prog, bp)
+    # check for external log
+    ltarg = mp.m_logdev_targp
+    if ltarg != btarg :
+        print(f'logtarg 0x{ltarg.value_():x}')
+        lru = ltarg.bt_lru
+        for _, _, bp in list_lru_for_each_entry(
+            "struct xfs_buf", lru.address_of_(), "b_lru"
+        ):
+            # check to make sure this buffer is really for this device
+            if bp.b_target == ltarg :
+                xfs_print_verbose_buf(prog, bp)
 
 # Iterate over all the XFS mounts and print LRU cached xfs_buf
 def xfs_print_all_bufs(prog: Program, dst: Optional[Path]=None) -> None :
